@@ -1,0 +1,26 @@
+FROM python:3.11-slim
+WORKDIR /app
+
+USER root
+
+# Install system dependencies for PyMC / PyTensor (needed for compilation)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libopenblas-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install BigQuery, PyMC, and data processing dependencies
+# We pin scipy to 1.13.0 as per project requirements.
+# arviz>=0.18.0 is required for scipy 1.13.0 compatibility (needs Python 3.10+).
+RUN --mount=type=cache,target=/root/.cache/pip pip install --no-cache-dir \
+    "pymc>=5.0.0" \
+    google-cloud-bigquery \
+    google-cloud-bigquery-storage \
+    pyarrow \
+    db-dtypes \
+    "arviz>=0.18.0" \
+    "numpy<2.3" \
+    "scipy==1.13.0"
+
+# Re-set to root to ensure we have permissions for the mounted volume /app
+USER root
