@@ -1,0 +1,8 @@
+kind: sources
+name: my-bigquery-source
+type: "bigquery"
+project: ${BQ_PROJECT}
+location: "europe-west3"
+allowedDatasets:
+  - "${BQ_DATASET}"
+maxQueryResultRows: 100

@@ -1,0 +1,21 @@
+model = "gpt-5.1-codex-mini"
+approval_policy = "untrusted"   # Other options: on-request, never, or { granular = { ... } }
+model_reasoning_effort = "low"
+sandbox_mode = "workspace-write"
+personality = "pragmatic"
+
+[windows]
+sandbox = "elevated"
+
+[sandbox_workspace_write]
+network_access = true
+
+[mcp_servers.bigquery_toolbox]
+args = ["-y", "@toolbox-sdk/server", "--stdio", "--prebuilt", "bigquery"]
+command = "npx.cmd"
+enabled = true
+env_vars = ["BIGQUERY_PROJECT", "BIGQUERY_DATASET"]
+
+[mcp_servers.bigquery_toolbox.env]
+BIGQUERY_DATASET = "diploma_mg"
+BIGQUERY_PROJECT = "studious-spirit-440213-t6"
