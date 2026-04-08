@@ -1,5 +1,17 @@
 # Feature Context Summary
 
+## 2026-04-08 — Task 4 Completed (Consolidation SQL Rewrite for Updated Output Contract)
+- Rewrote consolidation SQL for all three evaluation planes to align with updated output contract requirements:
+  - `sql/consolidation/consolidate_dda.sql`
+  - `sql/consolidation/consolidate_mmm.sql`
+  - `sql/consolidation/consolidate_survival.sql`
+- DDA consolidation now updates `actual_conversions` and `actual_cac_usd` from holdout factuals, with paid-only attribution filtering and holdout-safe fallback joins (`users_attribution_imputed` + `users_attribution`).
+- MMM consolidation now resolves holdout factual `actual_net_revenue_usd` at country, macro-region, and global segment levels, and zero-fills unmatched predicted rows.
+- Survival consolidation now updates both `actual_active_users` and `actual_ltv_usd`, with fallback-aware segment matching and cumulative holdout net-revenue translation by `rebill_period_t`.
+- Expanded automated validation in:
+  - `tests/test_consolidation.py` (contract fields, rendering, target-row-driven zero-fill behavior).
+- Ran `pytest -q`: final result `28 passed`.
+
 ## 2026-04-08 — Task 3 Completed (Net-Revenue Deduplication + Holdout Attribution Fallback)
 - Removed duplicate refund/net-revenue adjustments from MMM model translation layer so forecasts are persisted directly as net values from `mmm_timeseries`.
 - Updated `models/dda_common.py` to stop re-summing purchase net revenue where `attribution_paths.conversion_value_usd` already defines net acquisition value.
