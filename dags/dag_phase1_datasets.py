@@ -3,9 +3,10 @@ dag_phase1_datasets.py
 ======================
 Phase 1 ELT pipeline:
 1. Build ROCV folds.
-2. Build and populate `users_attribution_imputed`.
+2. Build and populate users_attribution_imputed.
 3. Build intermediate datasets.
 4. Build model-specific marts.
+5. Trigger DDA phase.
 """
 
 from __future__ import annotations
@@ -16,6 +17,7 @@ from pathlib import Path
 
 from airflow import DAG
 from airflow.operators.python import PythonOperator
+from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 from airflow.providers.google.cloud.operators.bigquery import BigQueryInsertJobOperator
 
 BQ_PROJECT = os.environ.get("BQ_PROJECT", "{{ BQ_PROJECT }}")
@@ -71,13 +73,26 @@ with DAG(
         import sys
 
         sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-        from scripts.users_attribution_imputation import run
+        from pipelines.users_attribution_imputation import run
 
         run(bq_project=BQ_PROJECT, bq_dataset=BQ_DATASET)
 
     task_impute_users_attribution = PythonOperator(
         task_id="impute_users_attribution",
         python_callable=_run_users_attribution_imputation,
+    )
+
+    def _run_generate_touchpoints(**kwargs) -> None:
+        import sys
+
+        sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
+        from generate_touchpoints import run
+
+        run(bq_project=BQ_PROJECT, bq_dataset=BQ_DATASET)
+
+    task_generate_touchpoints = PythonOperator(
+        task_id="generate_touchpoints_log",
+        python_callable=_run_generate_touchpoints,
     )
 
     task_create_channel_cpc_weights = BigQueryInsertJobOperator(
@@ -146,12 +161,12 @@ with DAG(
         },
     )
 
-
     task_create_rocv_folds >> task_copy_users_attribution_base >> task_impute_users_attribution
+    task_impute_users_attribution >> task_generate_touchpoints
     task_impute_users_attribution >> task_create_cohorts_retention
     task_impute_users_attribution >> task_create_mmm_timeseries
     task_impute_users_attribution >> task_create_refund_rate
-    task_impute_users_attribution >> task_create_attribution_paths
-    task_impute_users_attribution >> task_create_channel_cpc_weights >> task_create_channel_spend
+    task_generate_touchpoints >> task_create_attribution_paths
+    task_generate_touchpoints >> task_create_channel_cpc_weights >> task_create_channel_spend
     task_create_channel_spend >> task_create_mmm_timeseries
 

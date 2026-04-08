@@ -39,8 +39,8 @@ Funnel Stages:
 - Orphan Handling (if approach above is chosen): strictly apply the `COALESCE(a.media_source, 'legacy_untracked')` rule.
 
 ## 1.3. Rule 2 for Unsuccessful paths (churn)
-- Base: generate synthetic users (`user_id`::UUID, `is_conversion = False`) matching certain fold's churn rate (e.g., 100% - convertion rate).
-- Path Logic: churns usually break at the Top or Mid funnel. But to maintain realistic conversion ratios, a portion of such paths (~12%) should reach the Bottom Funnel.
+- Base: generate synthetic users (`user_id`::UUID, `is_conversion = False`) matching certain fold's churn rate (100% minus convertion rate).
+- Path Logic: churns usually break at the Top or Mid funnel. But to maintain realistic conversion ratios, a portion of such paths (12%) should reach the Bottom Funnel.
 
 # 2. Generating `insights_channel_spend` (Dynamic Budget Allocation)
 The raw `insights` table provides ad spendings only at the `(day, country)` level. To expand the modeling capabilities (to the `(day, country, media_source)` level), we must allocate this macro-budget to specific PAID channels using the traffic volume from `touchpoints_log`, weighted by **region-specific** CPC costs empirically derived **from actual data**: $$CLAMP(SUM(insights.spend) / COUNT(*), 0.1, 5.0)$$, normalized by that region's mean.

@@ -1,7 +1,7 @@
 model = "gpt-5.1-codex-mini"
-approval_policy = "untrusted"   # Other options: on-request, never, or { granular = { ... } }
-model_reasoning_effort = "low"
-sandbox_mode = "workspace-write"
+approval_policy = "on-request"   # Other options: on-request, never, or { granular = { ... } }
+model_reasoning_effort = "high"
+sandbox_mode = "danger-full-access"
 personality = "pragmatic"
 
 [windows]
