@@ -1,0 +1,11 @@
+apache-airflow-providers-docker==3.10.0
+apache-airflow-providers-google==10.16.0
+apache-airflow-providers-standard==1.12.2
+google-cloud-bigquery
+numpy<2.3
+pandas
+scipy==1.13.0
+arviz>=0.18.0
+matplotlib
+seaborn
+statsmodels==0.14.6

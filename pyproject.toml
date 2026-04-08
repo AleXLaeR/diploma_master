@@ -1,0 +1,27 @@
+[project]
+name = "diploma"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "apache-airflow>=3.1.8",
+    "apache-airflow-providers-standard==1.12.2",
+    "apache-airflow-providers-google>=20.0.0",
+    "apache-airflow-providers-docker==3.10.0",
+    "db-dtypes>=1.5.0",
+    "google-cloud-bigquery>=3.40.1",
+    "matplotlib>=3.10.8",
+    "numpy>=1.22.4,<2.3",
+    "pandas>=2.3.3",
+    "pandas-gbq>=0.34.0",
+    "seaborn>=0.13.2",
+    "scipy==1.13.0",
+    "arviz>=0.18.0",
+    "statsmodels==0.14.6",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+]

@@ -1,0 +1,16 @@
+.vscode/
+.DS_Store
+
+temp/
+build/
+
+.env
+!.env.example
+
+__pycache__/
+*.pyc
+.python-version
+
+*.log
+
+sa_key.json
