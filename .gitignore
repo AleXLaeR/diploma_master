@@ -7,10 +7,15 @@ build/
 .env
 !.env.example
 
+.venv/
 __pycache__/
 *.pyc
 .python-version
 
-*.log
+*.npy
+*.nc
 
-sa_key.json
+*.log
+reports/
+
+sa*.json
