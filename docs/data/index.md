@@ -12,3 +12,4 @@ This document defines where to locate the exact data schemas required for the ex
     - Consolidation phase spec describing how to consolidate the actual holdout data with model forecasts for every scenario: **./final/consolidation_phase.md**
 
 __AI Agent Instruction: you MUST adhere strictly to the column names, data types, and logical constraints defined in the referenced documents. ALL DATA TYPES SHOULD BE INFERRED AS **(String)** UNLESS SPECIFIED OTHERWISE.__
+__AI Agent Instruction: for all downstream queries and joins, use `users_attribution_imputed` (fold-aware) instead of raw `users_attribution`.__

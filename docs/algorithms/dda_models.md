@@ -63,7 +63,7 @@ In case of Shapley algorithm which can produce negative weights this way, affine
 
 **Important note: even though attribution isn't the right tool for forecasting, we still project the holdout CAC to show that ALL models (including baseline) results in relatively same metric scores, which solidifies the point that DDA is a RETROspective analysis instrument and not a predictive one.**
 
-1. On the training dataset, calculate the total number of paid conversions and the exact **paid-only** net acquisition revenue (joining `purchases` and `users_attribution` tables).
+1. On the training dataset, calculate the total number of paid conversions and the exact **paid-only** net acquisition revenue (joining `purchases` and `users_attribution_imputed` tables, fold-scoped).
 2. Distribute this conversion volume across **PAID** channels using calculated weights ($W_x$) for a given fold.
 3. Query the `insights_channel_spend` table for the training period to get the actual historical spend per paid channel for a given fold.
 4. Calculate Historical CAC and CR for a given fold, per channel.

@@ -69,8 +69,10 @@ weekly_revenue AS (
     FROM
         `{{ project }}.{{ dataset }}.purchases` AS p
     INNER JOIN
-        `{{ project }}.{{ dataset }}.users_attribution` AS ua
+        `{{ project }}.{{ dataset }}.users_attribution_imputed` AS ua
         ON p.user_id = ua.user_id
+        AND ua.fold_id = 'fold_4'
+        AND ua.is_synthetic = FALSE
     LEFT JOIN
         `{{ project }}.{{ dataset }}.countries` AS c
         ON ua.country_code = c.country_code

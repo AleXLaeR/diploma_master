@@ -12,15 +12,17 @@ WITH
 -- attribution record.
 touchpoint_with_country AS (
     SELECT
+        ua.fold_id,
         DATE(tl.created_at)  AS touch_date,
         ua.country_code,
         tl.media_source
     FROM
         `{{ project }}.{{ dataset }}.touchpoints_log` AS tl
     INNER JOIN
-        `{{ project }}.{{ dataset }}.users_attribution` AS ua
+        `{{ project }}.{{ dataset }}.users_attribution_imputed` AS ua
         ON tl.user_id = ua.user_id
     WHERE
+        ua.is_synthetic = FALSE
         -- Exclude non-paid channels (CPC = 0)
         tl.media_source NOT IN ('organic', 'legacy_untracked')
 ),
@@ -29,11 +31,12 @@ touchpoint_with_country AS (
 click_counts AS (
     SELECT
         touch_date,
+        fold_id,
         country_code,
         media_source,
         COUNT(*) AS click_count
     FROM touchpoint_with_country
-    GROUP BY touch_date, country_code, media_source
+    GROUP BY touch_date, fold_id, country_code, media_source
 ),
 
 -- Step 3: Apply per-(fold, region, channel) empirical CPC weight from channel_cpc_weights.
@@ -41,20 +44,19 @@ click_counts AS (
 -- still contribute at neutral weight rather than being zeroed out.
 weighted_clicks_base AS (
     SELECT
-        f.fold_id,
+        cc.fold_id,
         cc.touch_date,
         cc.country_code,
         cc.media_source,
         cc.click_count,
         cc.click_count * COALESCE(w.cpc_weight, 1.0) AS weighted_clicks
     FROM click_counts AS cc
-    CROSS JOIN (SELECT fold_id FROM `{{ project }}.{{ dataset }}.rocv_folds`) f
     LEFT JOIN `{{ project }}.{{ dataset }}.countries` AS c
         ON cc.country_code = c.country_code
     LEFT JOIN `{{ project }}.{{ dataset }}.channel_cpc_weights` AS w
         ON  COALESCE(c.region, 'ROW') = w.region
         AND cc.media_source           = w.media_source
-        AND f.fold_id                 = w.fold_id
+        AND cc.fold_id                = w.fold_id
 ),
 
 -- Step 4: Compute total weighted clicks per (fold, date, country)

@@ -31,7 +31,7 @@ This evaluates the holistic pipeline and demonstrates how combining the planes l
 - **Portfolio Marginal ROAS (mROAS)**
   - **What it measures**: predicted aggregate enterprise revenue given a specific media budget allocation.
   - **How it compares**: simulates budget allocation based on Deterministic strategy vs Probabilistic strategy.
-  - **Visual Proof**: **Figure 9** comparing total expected yield under identical budgets.
+  - **Visual Proof**: **Figure 10** comparing total expected yield under identical budgets.
 
 ---
 # 2. Micro-Level: Data-Driven Attribution (DDA).
@@ -91,6 +91,14 @@ This evaluates the holistic pipeline and demonstrates how combining the planes l
   - **How it compares**: Deterministic OLS offers no native probabilistic bounds. A well-calibrated Bayesian model will track close to the nominal %. Y-axis = nominal coverage level (50%, 80%, 90%, 95%), x-axis = actual empirical coverage across holdout folds. BSTS traces a line near the diagonal. OLS doesn't exist on this chart - annotate it with a note saying the deterministic model produces no intervals. The absence is the argument.
   - **Visual Proof**: **Figure 5** tracking the diagonal (empirical vs nominal rate).
 
+- **Posterior Predictive Time-Series (Shaded Confidence Interval)**
+  - **What to plot**: X-axis = timeline (e.g., weeks); Y-axis = target variable. Plot observed actuals, mean posterior predictive, and 95% credible band shaded region, split by a vertical line denoting the train/holdout boundary.
+  - **The story**: Translates abstract Bayesian uncertainty into a tangible business visual. Where deterministic OLS produces a rigid point estimate that fails silently during regime shifts (e.g., Q4), the Bayesian credible band dynamically encompasses the actuals, proving the model successfully quantifies the increased volatility.
+  - **Build notes**: Use `ax.fill_between` for the 95% band. Ensure a vertical line splits Train vs Holdout. Contrast against the deterministic point forecast directly if possible.
+  - **Data requirement**: Observed actuals (`mmm_timeseries`) + posterior predictive traces.
+  - **Implementation note**: Best showcased on Fold 4 to visually demonstrate uncertainty calibration explicitly during the Q4 regime shift.
+  - **Visual Proof**: **Figure 6** displaying the time-series with the shaded posterior predictive intervals.
+
 ## Business KPIs.
 - **Systematic Bias (WBIAS) per fold**.
   - **What it measures**: does the model systematically over or under-predict during trend shifts?
@@ -109,7 +117,7 @@ This evaluates the holistic pipeline and demonstrates how combining the planes l
 - **LTV Extrapolation Bias (D90 & D180)**.
   - **What it measures**: error in cohort cumulative revenue over 3-6 months.
   - **How it compares**: exponential curve systematically overestimates late-stage retention, directly inflating the predicted LTV.
-  - **Visual Proof**: **Figure 6** (Empirical vs. Exponential vs. BdW) showing divergence at the long tail.
+  - **Visual Proof**: **Figure 7** (Empirical vs. Exponential vs. BdW) showing divergence at the long tail.
 
 ---
 # A few things worth flagging explicitly about this set:

@@ -31,7 +31,7 @@ Objective: flatten chronological events into a single path string per user.
 # 3. Generating `mmm_timeseries`
 Objective: create a weekly macro-level time series integrating revenue, spend, and exogenous factors.
 
-1. **Base Grain**: generate a continuous timeline of training weeks (-> `date_week`) from augmented `purchases` cross-joined with `users_attribution` and `countries`.
+1. **Base Grain**: generate a continuous timeline of training weeks (-> `date_week`) from `purchases` cross-joined with `users_attribution_imputed` and `countries`.
 2. **Aggregate Revenue**: sum the net revenue from purchases for that `date_week` and `country_group` (including `refunded`, `settled_ok` statuses to capture deductions).
 3. **Aggregate Spend**: join the multi-tenant `insights_channel_spend` table on `fold_id` (AS CTE queried from `rocv_folds`) and `date_week`.
 4. **Calculate Exogenous Factors**.

@@ -47,7 +47,7 @@ Data requirement: `eval_mmm` with actuals populated, aggregated per fold.
 
 
 # F5 — Calibration Coverage Chart.
-What to plot: X-axis = nominal coverage level (50%, 60%, 70%, 80%, 90%, 95%). Y-axis = empirical coverage rate (percentage of held-out actuals that fell within the corresponding credible interval). One line for BSTS. One diagonal reference line (the perfect calibration ideal). OLS is not plotted — annotate its absence explicitly in the figure caption.
+What to plot: X-axis = nominal coverage level (50%, 60%, 70%, 80%, 90%, 95%). Y-axis = empirical coverage rate (percentage of held-out actuals that fell within the corresponding credible interval). One line for BSTS. One diagonal reference line (the perfect calibration ideal). OLS is not plotted - annotate its absence explicitly in the figure caption.
 The story: This is your categorical proof. A well-calibrated BSTS traces near the diagonal. OLS cannot exist on these axes because it produces no intervals. The annotation "OLS/STL: no probabilistic output - cannot be evaluated on this criterion" placed inside the plot area is more persuasive than any bar comparison.
 Build notes: Compute empirical coverage for each nominal level by checking, for each holdout observation, whether it falls within the alpha/2 and 1-alpha/2 quantiles of the posterior predictive distribution. Average across folds. Plot with ax.plot for BSTS, ax.plot([0,1],[0,1], '--', color='gray') for the diagonal. Keep the aspect ratio square so the diagonal is literally at 45 degrees.
 
@@ -55,7 +55,19 @@ Data requirement: Full posterior predictive distribution for holdout observation
 Implementation note: should be compared across all 4 folds.
 
 
-# F6 — Cohort Survival Decay Curves.
+# F6 — Posterior Predictive Time-Series (Shaded Confidence Interval).
+What to plot: X-axis = timeline (e.g., weeks). Y-axis = target variable (revenue). Three elements plotted on the same axes: the observed actuals (as markers or a thin line), the mean of the posterior predictive distribution (as a solid line), and the 95% credible band (as a shaded region). Add a vertical dashed line to separate the Train and Holdout periods.
+
+The story: this is the chronological visual proof of Bayesian reliability. It shows exactly when the model missed and by how much, but more importantly, it shows the uncertainty bounds evolving over time. Where deterministic OLS produces a single rigid line that fails silently during the Q4 regime shift, the Bayesian credible band dynamically encompasses the actuals, proving the model "knows what it doesn't know" and correctly models the increased volatility. It translates the statistical abstraction of F5 into a direct, business-readable visual. By looking at it, the reader can visually witness that even when the mean prediction inevitably misses the exact peak of the Q4 spike, the widened credible band dynamically encompasses the actuals.
+
+Build notes: use `ax.plot` for actuals and the posterior mean. Use `ax.fill_between` to draw the 95% HDI/credible interval with transparency (alpha=0.3). Use `ax.axvline` for the train/holdout split. The gap between the deterministic forecast line and the actuals should vividly contrast with the Bayesian shaded band that manages to cover the regime shifts.
+
+Data requirement: observed actuals from `mmm_timeseries` + posterior predictive distribution traces from `posterior_predictive_{model_name}_{fold_id}.npy`.
+
+Implementation note: this plot is most impactful when rendered for Fold 4, as its holdout period contains the extreme Q4 revenue spike, perfectly showcasing the model's capacity to maintain calibrated uncertainty during structural volatility.
+
+
+# F7 — Cohort Survival Decay Curves.
 What to plot: X-axis = rebill number (period since acquisition, 1 through 13). Y-axis = retention rate (log-scaled, range approximately 0.1 to 0.8 as per your legacy spec). Three series: empirical observed retention, exponential curve fit, BdW fit. Optionally show multiple cohorts as separate small multiples if they tell materially different stories.
 
 The story: all three lines will be close at early periods (rebill 1–3). At rebill 5+, the exponential curve will diverge upward from empirical, overestimating retention. The BdW curve will track the empirical tail much more closely. The log y-axis is important - it makes the divergence at the long tail legible that would be visually compressed on a linear scale.
@@ -65,13 +77,13 @@ Build notes: ax.set_yscale('log'). Plot empirical as ax.step or ax.scatter with 
 Data requirement: `cohorts_retention` (empirical) + model S(t) predictions (`eval_survival`) tables.
 
 
-# F7 — RMSE Divergence (retention out-of-sample proof).
+# F8 — RMSE Divergence (retention out-of-sample proof).
 What to plot: X-axis = cohort age in months (1 through max horizon). Y-axis = RMSE. Three lines: exponential and BdW. The lines should start close and diverge - the crossing/divergence point is the visual thesis of this plot.
 
 Data requirement: Per-cohort model predictions at multiple horizons.
 
 
-# F8 — LTV Extrapolation Bias (small multiples per cohort).
+# F9 — LTV Extrapolation Bias (small multiples per cohort).
 What to plot: one panel per acquisition cohort (e.g., cohorts acquired in months 1–8 of your dataset). In each panel: observed cumulative revenue curve, exponential model extrapolation, BdW model extrapolation. Mark the train/holdout boundary with a vertical dashed line. The extrapolation zone is to the right of that line.
 
 The story: in the extrapolation zone, the exponential line will sit consistently above the observed curve (overestimates LTV). The BdW model will track the observed curve. The shaded gap between exponential and observed is the business cost of using the wrong model — quantify it as a percentage in the subplot title (e.g., "+23% LTV overestimation at D180").
@@ -81,7 +93,7 @@ Build notes: `plt.subplots` grid, shared y-axis across cohorts. Use `ax.axvline`
 Data requirement: cumulative observed revenue per cohort + model-projected LTV curves (derived from `eval_survival.expected_ltv_usd`).
 
 
-# F9 — Portfolio mROAS (Business "Climax").
+# F10 — Portfolio mROAS (Business "Climax").
 What to plot: grouped bar chart. X-axis = two groups: "Deterministic strategy" (Last Click CAC + OLS MMM + Exponential LTV) and "Probabilistic strategy" (Shapley CAC + BSTS MMM + BdW LTV). Y-axis = simulated portfolio marginal ROAS under identical total budget. Within each group, optionally show sub-bars for each component's contribution.
 
 The story: this is the synthesis figure and should be last in the results chapter. Under the same budget, the probabilistic strategy's allocation (informed by more accurate channel weights, better trend modeling, and corrected LTV) should yield a higher predicted ROAS. The magnitude of the difference is your thesis's business case quantified in a single number.

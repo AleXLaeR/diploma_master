@@ -15,12 +15,12 @@ The architectural rule is compute isolation:
 # Active DAG Topology
 
 ## Phase 0
-- `phase_0_dataset_augmentation`
-- Produces augmented source tables (`augmented_purchases`, `augmented_users_attribution`).
+- Removed. Attribution imputation is now part of Phase 1.
 
 ## Phase 1
 - `phase_1_marketing_analytics_pipeline`
-- Builds intermediate marts: `insights_channel_spend`, `refund_rate`, `cohorts_retention`, `attribution_paths`, `mmm_timeseries`.
+- Builds `users_attribution_imputed` first, then intermediate marts:
+  `insights_channel_spend`, `refund_rate`, `cohorts_retention`, `attribution_paths`, `mmm_timeseries`.
 
 ## Phase 2 (ROCV)
 - `rocv_master_orchestrator` triggers one `phase2_dda_models` run per fold (`fold_1`..`fold_4`).
@@ -55,4 +55,3 @@ The architectural rule is compute isolation:
 ## 4. Fallback Traceability
 - Hierarchical fallback must be explicit through `confidence_weight`.
 - Scenario-B Bayesian rows must declare `prior_source` (`shapley_dda` or `heuristic_fallback`).
-

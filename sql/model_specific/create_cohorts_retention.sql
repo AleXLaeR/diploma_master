@@ -15,7 +15,7 @@ AS
 WITH
 -- -------------------------------------------------------------------------
 -- Step 1: Identify the base cohort (rebill_number = 0 = acquisition event)
--- LEFT JOIN to users_attribution for country_code, then use countries.region.
+-- LEFT JOIN to users_attribution_imputed for country_code, then use countries.region.
 -- -------------------------------------------------------------------------
 base_cohort AS (
     SELECT
@@ -26,8 +26,10 @@ base_cohort AS (
     FROM
         `{{ project }}.{{ dataset }}.purchases` AS p
     LEFT JOIN
-        `{{ project }}.{{ dataset }}.users_attribution` AS ua
+        `{{ project }}.{{ dataset }}.users_attribution_imputed` AS ua
         ON p.user_id = ua.user_id
+        AND ua.fold_id = 'fold_4'
+        AND ua.is_synthetic = FALSE
     LEFT JOIN
         `{{ project }}.{{ dataset }}.countries` AS c
         ON ua.country_code = c.country_code

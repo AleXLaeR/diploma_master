@@ -4,7 +4,7 @@ This document defines the final process before the cross-model comparison. To pr
 # 1. Input Data
 - Predictions: `eval_dda`, `eval_survival`, `eval_mmm` (target tables with populated `expected_*` but empty `actual_*`).
 - Ground Truth: augmented `purchases` table (transaction ledger used by the modeling pipeline; holdout weeks only).
-- Mapping: augmented `users_attribution` (to filter out non-paid attributions) and fold-scoped `insights_channel_spend`.
+- Mapping: `users_attribution_imputed` (to filter out non-paid attributions) and fold-scoped `insights_channel_spend`.
 
 # 2. Domain-Specific Factual Calculation Logic
 Because the models operate on entirely different analytical planes, this process must calculate the factual reality using tailored logic for each domain table.

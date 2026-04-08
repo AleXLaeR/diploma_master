@@ -27,8 +27,10 @@ empirical_cpc_base AS (
         SUM(i.spend) / COUNT(*) AS empirical_cpc
     FROM rocv_folds AS f
     CROSS JOIN `{{ project }}.{{ dataset }}.touchpoints_log` AS tl
-    JOIN `{{ project }}.{{ dataset }}.users_attribution` AS ua 
+    JOIN `{{ project }}.{{ dataset }}.users_attribution_imputed` AS ua
         ON tl.user_id = ua.user_id
+        AND ua.fold_id = f.fold_id
+        AND ua.is_synthetic = FALSE
     JOIN `{{ project }}.{{ dataset }}.countries` AS cm 
         ON ua.country_code = cm.country_code
     JOIN `{{ project }}.{{ dataset }}.insights` AS i 
@@ -69,4 +71,3 @@ FROM empirical_cpc_base AS ec
 JOIN region_mean AS rm
     ON ec.fold_id = rm.fold_id AND ec.region = rm.region
 ORDER BY ec.fold_id, ec.region, ec.media_source;
-
