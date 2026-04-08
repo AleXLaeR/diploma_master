@@ -27,16 +27,21 @@ empirical_cpc_base AS (
         SUM(i.spend) / COUNT(*) AS empirical_cpc
     FROM rocv_folds AS f
     CROSS JOIN `{{ project }}.{{ dataset }}.touchpoints_log` AS tl
-    JOIN `{{ project }}.{{ dataset }}.users_attribution_imputed` AS ua
-        ON tl.user_id = ua.user_id
-        AND ua.fold_id = f.fold_id
-        AND ua.is_synthetic = FALSE
+    LEFT JOIN `{{ project }}.{{ dataset }}.users_attribution_imputed` AS ua_imputed
+        ON tl.user_id = ua_imputed.user_id
+        AND ua_imputed.fold_id = f.fold_id
+        AND ua_imputed.is_synthetic = FALSE
+    LEFT JOIN `{{ project }}.{{ dataset }}.users_attribution` AS ua_raw
+        ON tl.user_id = ua_raw.user_id
     JOIN `{{ project }}.{{ dataset }}.countries` AS cm 
-        ON ua.country_code = cm.country_code
+        ON COALESCE(ua_imputed.country_code, ua_raw.country_code) = cm.country_code
     JOIN `{{ project }}.{{ dataset }}.insights` AS i 
-        ON DATE(tl.created_at) = i.date AND ua.country_code = i.country_code
+        ON DATE(tl.created_at) = i.date
+        AND COALESCE(ua_imputed.country_code, ua_raw.country_code) = i.country_code
     WHERE 
         tl.media_source NOT IN ('organic', 'legacy_untracked')
+        AND COALESCE(ua_imputed.media_source, ua_raw.media_source)
+            NOT IN ('organic', 'legacy_untracked')
         AND DATE(tl.created_at) < f.train_end
     GROUP BY f.fold_id, cm.region, tl.media_source
 ),

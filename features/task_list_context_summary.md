@@ -1,5 +1,21 @@
 # Feature Context Summary
 
+## 2026-04-08 — Task 3 Completed (Net-Revenue Deduplication + Holdout Attribution Fallback)
+- Removed duplicate refund/net-revenue adjustments from MMM model translation layer so forecasts are persisted directly as net values from `mmm_timeseries`.
+- Updated `models/dda_common.py` to stop re-summing purchase net revenue where `attribution_paths.conversion_value_usd` already defines net acquisition value.
+- Patched flagged downstream SQL to support holdout converters missing fold-scoped imputed attribution:
+  - `sql/intermediate/create_channel_cpc_weights.sql`
+  - `sql/intermediate/create_insights_channel_spend.sql`
+  - `sql/consolidation/consolidate_dda.sql`
+- Implemented fallback pattern with raw attribution joins and coalesced keys:
+  - `COALESCE(ua_imputed.country_code, ua_raw.country_code)`
+  - `COALESCE(ua_imputed.media_source, ua_raw.media_source)`
+- Added automated coverage in `tests/test_task3_net_revenue_and_fallbacks.py` for:
+  - no second MMM refund netting,
+  - DDA revenue source using `attribution_paths`,
+  - presence of required SQL fallback joins.
+- Ran `pytest -q`: final result `27 passed` after mid-verification fixes to existing guard test path scanning/allowlist behavior.
+
 ## 2026-04-08 — Task 2 Completed (`touchpoints_log` Reimplementation, v2)
 - Rewrote `scripts/generate_touchpoints.py` from scratch per spec §1 of `intermediate_datasets_implementation.md`.
 - v2 fixes 5 critical bugs: (1) join raw `users_attribution` instead of fold-scoped imputed → 16,997 legacy_untracked (not 47k); (2) remove `order_status` filter → 113,801 converters (not 108k); (3) UUID v4 churn IDs; (4) conv_rate from 1st-rebill retention (26.3%, not 90%); (5) multiplicative jitter instead of additive.
