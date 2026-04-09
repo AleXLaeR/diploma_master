@@ -94,11 +94,23 @@ Schema:
 Persists fitted parameters for the Gamma-Gamma monetary model to enable post-hoc analysis.
 Schema:
 - fold_id: ROCV fold.
-- segment: mapping to the cohort ID evaluated (or fallback descriptor).
+- segment: mapping to the cohort ID evaluated (or fallback descriptor), using the same segment key space as `eval_survival.segment`.
 - p (Float): fitted $p$ parameter of the Gamma-Gamma distribution.
 - q (Float): fitted $q$ parameter.
 - gamma (Float): fitted $\gamma$ parameter.
 - expected_arpu (Float): expected ARPU.
+
+Behavior notes:
+- Persistence is BdW-only (same execution that writes `survival_model_params`).
+- One row is expected per BdW-evaluated segment in the fold.
+- If a segment's `subscription_type` has no eligible monetary training events
+  (`rebill_number >= 1`, positive net amount, and `order_date < fold.train_end`),
+  then `p/q/gamma` are persisted as NULL and `expected_arpu = 0.0`.
+- Known edge case (expected by design, not a bug): some folds can have no eligible
+  monetary training renewals for a subscription type (for example, `SUB_3_MONTH`
+  in Fold 4 with `train_end = 2021-12-01`). In this case, affected segments must
+  persist NULL `p/q/gamma` with `expected_arpu = 0.0`, and downstream visuals must
+  treat this as "missing eligible monetary evidence", not failed model fitting.
 
 
 # 8. `portfolio_budget_simulation` table

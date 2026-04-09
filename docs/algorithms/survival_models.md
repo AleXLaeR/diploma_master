@@ -109,7 +109,13 @@ The classical Gamma-Gamma model (Fader and Hardie, 2005) was originally designed
 
 **Why this works in discrete space:** key insight is that GG models the **monetary value distribution**, not the purchase timing. Timing in continuous BTYD is handled by Pareto/NBD; in our discrete context, timing is handled by sBG/BdW. The two models are naturally complementary: survival determines _when_ (and _if_) a renewal occurs, GG determines _how much_ that renewal is worth. The decoupling is standard in the BTYD literature and transfers directly to the discrete contractual setting.
 
-**New table requirement:** persist fitted Gamma-Gamma parameters in `survival_monetary_params` table with schema: `fold_id`, `segment`, `p`, `q`, `gamma`, `expected_monetary_value`.
+**New table requirement:** persist fitted Gamma-Gamma parameters in `survival_monetary_params` table with schema: `fold_id`, `segment`, `p`, `q`, `gamma`, `expected_arpu`.
+
+**Persistence semantics (critical for visualization joins):**
+- `survival_monetary_params.segment` must reuse the same segment key space as `eval_survival.segment` (cohort ID or fallback descriptor), not plain `subscription_type`.
+- Persistence is BdW-only.
+- If a subscription type has no eligible monetary training rows in the fold (`rebill_number >= 1`, positive net amount, and `order_date < train_end`), its affected segments are still persisted with NULL `p/q/gamma` and `expected_arpu = 0.0`.
+- Typical example: Fold 4 (`train_end = 2021-12-01`) can legitimately miss `SUB_3_MONTH` monetary fit, because first rebills may start after `2021-12-01`.
 
 **3.2. Final Payload Generation:**
 The output contract for this analytical plane is `eval_survival` table. The predictions must be strictly tagged with the active `fold_id`. If the Fallback was triggered, the `segment` name must reflect the rolled-up group (as per 2.5: Dimensionality Reduction).

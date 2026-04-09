@@ -76,6 +76,8 @@ Build notes: ax.set_yscale('log'). Plot empirical as ax.step or ax.scatter with 
 
 Data requirement: `cohorts_retention` (empirical) + model S(t) predictions (`eval_survival`) tables.
 
+Implementation note (critical): `eval_survival` can contain multiple holdout weeks that map to the same discrete `rebill_period_t` for a cohort. For survival figures, aggregate first by `(segment, rebill_period_t)` (and by `model_name` when plotting model lines) before plotting/metric calculation to avoid visual duplication from repeated weekly rows.
+
 
 # F8 — RMSE Divergence (retention out-of-sample proof).
 What to plot: X-axis = cohort age in months (1 through max horizon). Y-axis = RMSE. Three lines: exponential and BdW. The lines should start close and diverge - the crossing/divergence point is the visual thesis of this plot.

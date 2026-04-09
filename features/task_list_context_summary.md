@@ -1,5 +1,16 @@
 # Feature Context Summary
 
+## 2026-04-09 — Task 7 Completed (Survival Models Rewrite)
+- Created `models/survival/` package with 9 new files (sBG, BdW, Baseline, Gamma-Gamma, base orchestrator, 3 entry-point shims).
+- **Critical BQ fix**: corrected column names from `product_id`/`country_group` → `subscription_type`/`macro_region` across all queries.
+- **N₀ reconstruction**: `cohorts_retention` has no `rebill_number=0` row; initial cohort sizes fetched from `purchases WHERE rebill_number=0` grouped by (sub_type, macro_region, acq_week).
+- **Fallback hierarchy updated**: FB1 now uses Pooled-MLE (pool all regions for week×sub_type, fit once, disaggregate by N₀). FB2 uses monthly aggregation. Segment names corrected to `_MACRO_GLOBAL` / `_ALL_SUB_`. Boundary-hit produces `confidence_weight=-0.5`.
+- **T_obs guard**: enforced in both orchestrator (skip MLE when t_max < 2) and `LTVModel.optimize()` (hard-reject underdetermined systems).
+- **Gamma-Gamma LTV** (NEW): fits (p,q,γ) per sub_type via MLE; E[M]=q·γ/(q−1); uses `refund_rates` table for net-LTV; persists to `survival_monetary_params`. `expected_ltv_usd` populated in `eval_survival`; `actual_ltv_usd` left NULL for consolidation SQL.
+- Updated `eval_survival` BQ schema to include `expected_ltv_usd`/`actual_ltv_usd` columns.
+- Updated `dags/dag_phase2_survival.py` imports to new module paths.
+- 47/47 automated tests pass (`tests/test_survival_new.py`).
+
 ## 2026-04-08 — Task 4 Completed (Consolidation SQL Rewrite for Updated Output Contract)
 - Rewrote consolidation SQL for all three evaluation planes to align with updated output contract requirements:
   - `sql/consolidation/consolidate_dda.sql`

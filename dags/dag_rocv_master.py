@@ -39,9 +39,6 @@ with DAG(
 ) as dag:
 
     for fold_id, fold_boundaries in FOLDS.items():
-        if fold_id != "fold_4":
-            continue
-
         conf_payload = {
             "fold_id": fold_id,
             "train_end": fold_boundaries["train_end"],
