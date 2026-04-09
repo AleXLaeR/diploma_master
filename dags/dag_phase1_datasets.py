@@ -12,12 +12,11 @@ Phase 1 ELT pipeline:
 from __future__ import annotations
 
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from airflow import DAG
 from airflow.operators.python import PythonOperator
-from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 from airflow.providers.google.cloud.operators.bigquery import BigQueryInsertJobOperator
 
 BQ_PROJECT = os.environ.get("BQ_PROJECT", "{{ BQ_PROJECT }}")
@@ -30,6 +29,7 @@ DAG_DEFAULT_ARGS = {
     "owner": "thesis",
     "depends_on_past": False,
     "retries": 1,
+    "retry_delay": timedelta(seconds=30)
 }
 
 
@@ -73,7 +73,7 @@ with DAG(
         import sys
 
         sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-        from pipelines.users_attribution_imputation import run
+        from scripts.users_attribution_imputation import run
 
         run(bq_project=BQ_PROJECT, bq_dataset=BQ_DATASET)
 
@@ -85,8 +85,8 @@ with DAG(
     def _run_generate_touchpoints(**kwargs) -> None:
         import sys
 
-        sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
-        from generate_touchpoints import run
+        sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+        from scripts.generate_touchpoints import run
 
         run(bq_project=BQ_PROJECT, bq_dataset=BQ_DATASET)
 

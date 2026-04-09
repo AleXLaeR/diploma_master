@@ -9,9 +9,9 @@ Schema:
 - fold_id: ROCV fold.
 - model_name: 'Markov_DDA' or 'Shapley_DDA' or 'Baseline_LastClick'.
 - forecast_period: WEEKLY (First day of holdout week).
-- expected_conversions (Float): forecasted volume of conversions based on historical CAC and Rebill Rates.
+- expected_conversions (Float): forecasted paid conversion volume per holdout week, computed from holdout paid spend divided by model-specific aggregate CAC.
 - actual_conversions (Int): actual observed paid conversions.
-- expected_cac_usd (Float): static CAC defined by the model.
+- expected_cac_usd (Float): model-specific aggregate CAC (constant within a fold for that model), derived from EWMA-smoothed neutral channel CAC blended by attribution weights.
 - actual_cac_usd (Float): factual historical spend divided by factual conversions.
 - confidence_weight (Int): confidence marker for fallback-aware analysis.
 

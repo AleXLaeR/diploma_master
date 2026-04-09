@@ -39,7 +39,7 @@ touchpoint_with_country AS (
     WHERE
         COALESCE(ua_imputed.country_code, ua_raw.country_code) IS NOT NULL
         -- Exclude non-paid channels (CPC = 0)
-        tl.media_source NOT IN ('organic', 'legacy_untracked')
+        AND tl.media_source NOT IN ('organic', 'legacy_untracked')
         AND COALESCE(ua_imputed.media_source, ua_raw.media_source, tl.media_source)
             NOT IN ('organic', 'legacy_untracked')
         AND (

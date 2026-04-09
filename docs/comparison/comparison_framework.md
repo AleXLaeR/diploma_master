@@ -50,9 +50,18 @@ This evaluates the holistic pipeline and demonstrates how combining the planes l
 
 **Purpose of this measurement**: WAPE scores do NOT rank the attribution models against each other — they all perform equivalently poorly at forecasting for the same structural reason (CAC non-stationarity). The purpose is to **confirm the theoretical boundary** of attribution modeling: it is a retrospective instrument that cannot substitute for forward-looking MMM. This section is a designed hypothesis test, not a performance comparison. The high WAPE across all three models is the finding, not a failure.
 
+The WAPE formulas are completely standard:
+$$\text{WAPE}_{\text{conv}} = \frac{\sum_w |\text{actual}_w - \text{expected}_w|}{\sum_w \text{actual}_w}$$
+
+$$\text{WAPE}_{\text{cac}} = \frac{\sum_w |\text{actual_cac}_w - \text{model_cac}|}{\sum_w \text{actual_cac}_w}$$
+
+Both are computable, per model per fold.
+
 **Reporting note**: Present the three models' WAPE values side-by-side with a single annotation: _"All DDA models converge to a similar error magnitude under holdout projection, confirming that CAC stationarity does not hold across the 3-month horizon. Attribution credit distribution (Markov vs. Shapley vs. Last-Click) is immaterial to out-of-sample revenue projection; DDA's analytical value lies exclusively in retrospective channel diagnostics and cross-plane MMM prior calibration."_
 
-**Important Note:** must be presented as a separate figure, which is currently excluded from the Figure manifest.
+**Important Note:** must be presented as two separate figures, which are currently excluded from the Figure manifest:
+- Conversions plot: 3 time-varying model lines (driven by three distinct model_aggregate_cacs) vs actual: models diverge in predicted volume based on their weight beliefs, but all miss the actual dynamics badly → proves non-stationarity.
+- CAC plot: 3 horizontal lines vs actual CAC trajectory: visually the most powerful illustration of a frozen, non-adaptive model. The punchline is that all three horizontal lines cluster near each other (proving convergence), while actual CAC fluctuates. You caption it: "Attribution-derived CAC forecasts collapse to a model-invariant mean regardless of weight methodology, confirming DDA is a retrospective instrument."
 
 
 ## Cross-Plane Validation (Out-of-Sample Surrogate).

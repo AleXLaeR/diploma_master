@@ -61,33 +61,40 @@ In case of Shapley algorithm which can produce negative weights this way, affine
 
 # 3. The Translation Algorithm.
 
-**Important note: even though attribution isn't the right tool for forecasting, we still project the holdout CAC to show that ALL models (including baseline) results in relatively same metric scores, which solidifies the point that DDA is a RETROspective analysis instrument and not a predictive one.**
+**Important note: even though attribution isn't the right tool for forecasting, we still project holdout CAC/conversions to show that DDA behaves primarily as a RETROspective instrument. Model outputs should remain comparable, but must stay mathematically differentiable across weight profiles.**
 
-1. On the training dataset, calculate the total number of paid conversions and the exact **paid-only** net acquisition revenue (joining `purchases` and `users_attribution_imputed` tables, fold-scoped).
-2. Distribute this conversion volume across **PAID** channels using calculated weights ($W_x$) for a given fold.
-3. Query the `insights_channel_spend` table for the training period to get the actual historical spend per paid channel for a given fold.
-4. Calculate Historical CAC and CR for a given fold, per channel.
-5. Project these values on the holdout period using **EWMA-smoothed static carry-forward**:
+1. On the training dataset, calculate total paid conversions (fold-scoped).
+2. Query `insights_channel_spend` for the same training period and channels.
+3. Build neutral per-channel CAC baselines, then smooth with EWMA (`alpha=0.3`).
+4. Blend neutral channel CACs with model weights ($W_x$) into a model-specific aggregate CAC.
+5. Project holdout-period expected conversions from actual holdout spend divided by that aggregate CAC.
 
 **DDA Holdout Projection Algorithm (identical for all 3 models):**
 The core assumption is that attribution-derived CAC and conversion rates are retrospective instruments and inherently non-stationary. To demonstrate this thesis claim, the projection method must be simple enough that all three models' out-of-sample WAPE converges (proving the error is structural, not method-dependent), but not naively rigid (which would exaggerate the error unfairly).
 
-**Step 1: Train-Period Weekly CAC/CR Series.**
-For each paid channel $c$ in the training window, compute weekly metrics:
+**Step 1: Neutral Per-Channel CAC Series (model-agnostic baseline).**
+For each paid channel $c$ in the training window, compute a **neutral** weekly CAC using an equal-split conversion denominator — deliberately independent of any model's attribution weights $W_c$:
 
-- $\text{CAC}_{c,w} = \frac{\text{Total Spend}_{c,w}}{\text{Weighted Conversions}_{c,w}}$, where $\text{Weighted Conversions}_{c,w} = \text{Total Paid Conversions}_w \times W_c$ (using the model's attribution weights $W_c$).
-- $\text{CR}_{c,w} = \text{Weighted Conversions}_{c,w}$ (absolute volume per week).
+$$\text{neutral\_conversions}_{c,w} = \frac{\text{Total Paid Conversions}_w}{N_{\text{paid channels}}}$$
+$$\text{neutral\_CAC}_{c,w} = \frac{\text{Total Spend}_{c,w}}{\text{neutral\_conversions}_{c,w}}$$
+
+Using the equal split as the baseline ensures that the channel CAC estimates reflect only the **real observed spend efficiency** of each channel, without being contaminated by the model's own attribution assumptions. This is the critical design choice: channel CAC is estimated once, identically for all models.
 
 **Step 2: EWMA Smoothing.**
-Apply exponentially-weighted moving average (smoothing factor $\alpha = 0.3$, emphasizing recent training weeks) to both series:
-$$\hat{\text{CAC}}_c = \text{EWMA}(\text{CAC}_{c,1}, ..., \text{CAC}_{c,T_{\text{train}}}, \alpha=0.3)$$
-$$\hat{\text{CR}}_c = \text{EWMA}(\text{CR}_{c,1}, ..., \text{CR}_{c,T_{\text{train}}}, \alpha=0.3)$$
-The final EWMA value at $T_{\text{train}}$ becomes the static projection for all holdout weeks.
+Apply exponentially-weighted moving average (smoothing factor $\alpha = 0.3$, emphasizing recent training weeks) to the neutral CAC series per channel:
+$$\hat{\text{CAC}}^{\text{neutral}}_c = \text{EWMA}(\text{neutral\_CAC}_{c,1}, ..., \text{neutral\_CAC}_{c,T_{\text{train}}}, \alpha=0.3)$$
+The final EWMA value at $T_{\text{train}}$ becomes the channel's static efficiency estimate.
 
-**Step 3: Holdout Projection.**
-For each holdout week $w_h$:
+**Step 3: Model-Specific Aggregate CAC.**
+Each model's attribution weights $W_c$ are applied as a **quality-blend** over the neutral channel CACs to produce a single model-specific aggregate CAC for the fold:
+$$\text{model\_aggregate\_CAC} = \sum_c W_c \cdot \hat{\text{CAC}}^{\text{neutral}}_c$$
 
-- $\text{expected\_conversions}_{w_h} = \sum_c \hat{\text{CR}}_c$ (summed across all paid channels).
-- $\text{expected\_cac\_usd}_{w_h} = \frac{\sum_c (\hat{\text{CR}}_c \times \hat{\text{CAC}}_c)}{\sum_c \hat{\text{CR}}_c}$ (volume-weighted average CAC).
+This is the key discriminating quantity: a model that assigns high weight to cheap channels (low $\hat{\text{CAC}}^{\text{neutral}}_c$) produces a lower aggregate CAC, predicting more efficient acquisition. The formula is **linear in $W_c$**, making model weights the unambiguous and direct driver of the output.
 
-**Rationale for EWMA α=0.3:** A low α gives more weight to recent periods, capturing the latest trend in CAC/CR while smoothing weekly noise. This makes the projection "generous" — if even an EWMA-smoothed static projection fails badly in the holdout, it conclusively demonstrates that DDA cannot forecast.
+**Step 4: Holdout Projection.**
+For each holdout week $w_h$, given the actual total holdout spend across all paid channels $\text{Spend}^{\text{total}}_{w_h}$:
+
+$$\text{expected\_conversions}_{w_h} = \frac{\text{Spend}^{\text{total}}_{w_h}}{\text{model\_aggregate\_CAC}}$$
+$$\text{expected\_cac\_usd}_{w_h} = \text{model\_aggregate\_CAC} \quad \text{(constant per model/fold)}$$
+
+**Rationale for neutral-split baseline:** The alternative — using model weights to estimate per-channel CAC — creates a circular collapse: $\text{CAC}_{c,w} \propto 1/W_c$, so $\text{spend}_{c,w}/\text{CAC}_{c,w} \propto W_c$, and summing over channels recovers a quantity nearly invariant to the weight distribution. The neutral split breaks this circularity. The EWMA $\alpha=0.3$ gives more weight to recent periods, capturing the latest spend-efficiency trend while smoothing weekly noise.
