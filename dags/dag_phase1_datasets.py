@@ -118,11 +118,11 @@ with DAG(
     )
 
     task_create_refund_rate = BigQueryInsertJobOperator(
-        task_id="create_refund_rate",
+        task_id="create_refund_rates",
         gcp_conn_id=BQ_CONN_ID,
         configuration={
             "query": {
-                "query": _render_sql("intermediate/create_refund_rate.sql"),
+                "query": _render_sql("intermediate/create_refund_rates.sql"),
                 "useLegacySql": False,
             }
         },

@@ -37,6 +37,7 @@ rebill_number	rebilled_tnxs
 ...exclude >11
 3. There are 114k distinct `subscription_id`s with total volume of purchases being 244k, giving an unrealistically high ~53% rebill rate.
 4. There are only 324 users that have multiple distinct `subscription_id`s in their purchase history, and only 2 of them have 3.
+5. For half a year (Apr 2021 - Sept 2021) the only `product_id` within `purchases` table is SUB_MONTHLY (possibly indicates that business decided to switch to monthly-only subscriptions for a while - possibly due to summer holidays where no educational activties are ongoing, but then reverted this decision for the semester start).
 
 
 # 2. `users_attribution` table
