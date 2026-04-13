@@ -49,27 +49,32 @@ USING (
             ON t.fold_id = f.fold_id
     ),
 
+    unique_folds AS (
+        SELECT DISTINCT fold_id, holdout_start, holdout_end
+        FROM fold_windows
+    ),
+
     factual_country AS (
         SELECT
-            fw.fold_id,
+            uf.fold_id,
             DATE_TRUNC(CAST(p.order_date AS DATE), WEEK(MONDAY)) AS forecast_period,
             COALESCE(ua_imputed.country_code, ua_raw.country_code, 'ROW') AS country_code,
             SUM(
                 p.order_amount_in_usd
                 - COALESCE(p.refund_amount_in_usd, 0)
             ) AS actual_net_revenue_usd
-        FROM fold_windows AS fw
+        FROM unique_folds AS uf
         INNER JOIN `{{ project }}.{{ dataset }}.purchases` AS p
-            ON CAST(p.order_date AS DATE) >= fw.holdout_start
-            AND CAST(p.order_date AS DATE) < fw.holdout_end
+            ON CAST(p.order_date AS DATE) >= uf.holdout_start
+            AND CAST(p.order_date AS DATE) < uf.holdout_end
             AND p.order_status IN ('approved', 'settled_ok', 'refunded')
         LEFT JOIN `{{ project }}.{{ dataset }}.users_attribution_imputed` AS ua_imputed
             ON p.user_id = ua_imputed.user_id
-            AND ua_imputed.fold_id = fw.fold_id
+            AND ua_imputed.fold_id = uf.fold_id
             AND ua_imputed.is_synthetic = FALSE
         LEFT JOIN `{{ project }}.{{ dataset }}.users_attribution` AS ua_raw
             ON p.user_id = ua_raw.user_id
-        GROUP BY fw.fold_id, forecast_period, country_code
+        GROUP BY uf.fold_id, forecast_period, country_code
     ),
 
     factual_region AS (
@@ -94,30 +99,37 @@ USING (
     ),
 
     factual_unified AS (
-        SELECT
-            fold_id,
-            forecast_period,
-            CONCAT('Total_Macro_', country_code) AS segment,
-            actual_net_revenue_usd
-        FROM factual_country
+        SELECT fold_id, forecast_period, segment, actual_net_revenue_usd
+        FROM (
+            SELECT
+                fold_id,
+                forecast_period,
+                CONCAT('Total_Macro_', country_code) AS segment,
+                actual_net_revenue_usd,
+                1 AS priority
+            FROM factual_country
 
-        UNION ALL
+            UNION ALL
 
-        SELECT
-            fold_id,
-            forecast_period,
-            CONCAT('Total_Macro_', region) AS segment,
-            actual_net_revenue_usd
-        FROM factual_region
+            SELECT
+                fold_id,
+                forecast_period,
+                CONCAT('Total_Macro_', region) AS segment,
+                actual_net_revenue_usd,
+                2 AS priority
+            FROM factual_region
 
-        UNION ALL
+            UNION ALL
 
-        SELECT
-            fold_id,
-            forecast_period,
-            'Total_Macro_Global' AS segment,
-            actual_net_revenue_usd
-        FROM factual_global
+            SELECT
+                fold_id,
+                forecast_period,
+                'Total_Macro_Global' AS segment,
+                actual_net_revenue_usd,
+                3 AS priority
+            FROM factual_global
+        )
+        QUALIFY ROW_NUMBER() OVER(PARTITION BY fold_id, forecast_period, segment ORDER BY priority DESC) = 1
     )
 
     SELECT

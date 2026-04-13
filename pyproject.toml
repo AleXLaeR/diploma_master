@@ -19,6 +19,7 @@ dependencies = [
     "scipy==1.13.0",
     "arviz>=0.18.0",
     "statsmodels==0.14.6",
+    "netcdf4>=1.7.3",
 ]
 
 [dependency-groups]

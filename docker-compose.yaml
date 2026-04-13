@@ -11,7 +11,7 @@ x-airflow-common:
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
     AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth'
-    DOCKER_MOUNT_DIR: ${DOCKER_MOUNT_DIR:-/mnt/c/Users/Gigabyte/Desktop/diploma}
+    DOCKER_MOUNT_DIR: ${DOCKER_MOUNT_DIR:-/run/desktop/mnt/host/c/Users/Gigabyte/Desktop/diploma}
     GOOGLE_APPLICATION_CREDENTIALS: /opt/airflow/sa_key.json
     AIRFLOW_CONN_GOOGLE_CLOUD_DEFAULT: >
       google-cloud-platform://?extra__google_cloud_platform__key_path=/opt/airflow/sa_key.json
@@ -21,6 +21,7 @@ x-airflow-common:
     OMP_NUM_THREADS: "1"
     MKL_NUM_THREADS: "1"
     OPENBLAS_NUM_THREADS: "1"
+    MMM_REPORTS_DIR: /opt/airflow/reports
   volumes:
     - ./dags:/opt/airflow/dags
     - ./logs:/opt/airflow/logs
