@@ -1,6 +1,6 @@
 Related doc (visualization strategy and implementation details): **./comparison_visualization.md**.
 
-This document outlines the evaluation framework for the thesis, designed to definitively compare deterministic heuristic strategies (Last-Click, OLS, Exponential decay) against probabilistic data-driven pipelines (Shapley/Markov, BSTS, sBG) across three granular analytical planes.
+This document outlines the evaluation framework for the thesis, designed to definitively compare deterministic heuristic strategies (Last-Click, OLS, Exponential decay) against probabilistic data-driven pipelines (Shapley/Markov, BSTS, BdW) across three granular analytical planes.
 
 The core philosophy of this framework: rather than deploying dozens of generic ML metrics, we use **domain-specific programmatic metrics** and **actionable business KPIs** that translate directly into clear visual proofs of the probabilistic approach's superiority.
 ---
@@ -24,14 +24,14 @@ To rigorously stress-test the probabilistic models against baseline heuristics, 
 2. **Q4 Asymmetric Load:** revenue data contains a structural spike (Jan 2022: $365k vs. Oct/Nov avg: $139k). This spike falls exclusively in the holdout windows of Folds 3 and 4, creating a structurally harder test for the later folds. **Mitigation:** Decompose metric reporting into two performance regimes - **"Stable Period" (Folds 1–2)** and **"Regime Change Period" (Folds 3–4)** - to make the models' calibration under distributional shift a distinct, explicit evaluation axis. A probabilistic model that maintains calibrated credible intervals during the Q4 spike is a stronger thesis argument than one that simply achieves a lower average WAPE.
 ---
 
-# 1. Cross-Domain Synthesis.
+<!-- # 1. Cross-Domain Synthesis.
 This evaluates the holistic pipeline and demonstrates how combining the planes leads to superior decision-making. No unified mathematical error metric exists across domains, so we focus on synthesized outputs.
 
 ## Business KPIs (Out-of-Sample).
 - **Portfolio Marginal ROAS (mROAS)**
   - **What it measures**: predicted aggregate enterprise revenue given a specific media budget allocation.
   - **How it compares**: simulates budget allocation based on Deterministic strategy vs Probabilistic strategy.
-  - **Visual Proof**: **Figure 10** comparing total expected yield under identical budgets.
+  - **Visual Proof**: **Figure 10** comparing total expected yield under identical budgets. -->
 
 ---
 # 2. Micro-Level: Data-Driven Attribution (DDA).
@@ -63,33 +63,9 @@ Both are computable, per model per fold.
 - Conversions plot: 3 time-varying model lines (driven by three distinct model_aggregate_cacs) vs actual: models diverge in predicted volume based on their weight beliefs, but all miss the actual dynamics badly → proves non-stationarity.
 - CAC plot: 3 horizontal lines vs actual CAC trajectory: visually the most powerful illustration of a frozen, non-adaptive model. The punchline is that all three horizontal lines cluster near each other (proving convergence), while actual CAC fluctuates. You caption it: "Attribution-derived CAC forecasts collapse to a model-invariant mean regardless of weight methodology, confirming DDA is a retrospective instrument."
 
-
-## Cross-Plane Validation (Out-of-Sample Surrogate).
-- **Rank Concordance with MMM (Spearman $\rho$)** <- **DEMOTED: present as an in-text table, not a standalone figure.**
-  - **Rationale for demotion:** with 6 channels, Spearman `ρ` can only take a small number of discrete values. DDA weights barely drift across folds (max observed range $\approx$ 0.003 per channel), so the `ρ`-per-fold trajectory has negligible within-series variance and would appear as a near-flat line — not a compelling standalone figure. The point is still valid and should be reported, but as a compact table.
-
-  **How to compute and present in the thesis text:**
-  1. **Extract DDA channel ranks:** for each fold, query `dda_weights` for `model_name IN ('Baseline_LastClick', 'Shapley_DDA')`. Rank the 6 paid channels by `weight` descending (rank 1 = highest weight) for each model separately.
-  2. **Extract MMM iROAS ranks:** for each fold, query `mmm_channel_contribs` for the best-performing Bayesian model (`MMM_BSTS_DDA` preferred, fall back to `MMM_Bayesian_DDA`). The `incr_{channel}` columns contain normalized incremental revenue weights. Rank the 6 channels descending.
-  3. **Compute Spearman ρ:** for each fold and each DDA model, compute `scipy.stats.spearmanr(dda_ranks, mmm_iroas_ranks).statistic`. This yields 2 ρ values per fold (Last-Click vs MMM, Shapley vs MMM).
-  4. **Present as a table** in the thesis:
-
-  | Fold     | Last-Click ρ vs MMM | Shapley_DDA ρ vs MMM |
-  | -------- | ------------------- | -------------------- |
-  | fold_1   | …                   | …                    |
-  | fold_2   | …                   | …                    |
-  | fold_3   | …                   | …                    |
-  | fold_4   | …                   | …                    |
-  | **Mean** | …                   | …                    |
-
-  **Annotation to include:** _"Shapley consistently achieves higher rank concordance with MMM's incremental ROAS estimates, confirming that coalition-based attribution better captures systemic channel efficiency than Last-Click's terminal-touch credit assignment. Note: with N=6 channels, Spearman ρ has limited resolution; these values serve as directional confirmation rather than a precise measurement."_
-
 ---
 # 3. Macro-Level: Media-Mix Modeling (MMM).
 ## Programmatic Metrics:
-- **In-Sample: WAIC**.
-  - Used strictly _within_ the probabilistic models to justify structural specifications (BSTS vs standard Bayesian Regression).
-  - Must be reported during the Bayesian model execution.
 - **Out-of-Sample: WAPE**.
   - Provides a scale-free programmatic error comparison on a 3-month rolling holdout. Reported per fold, not just globally, to visualize stability. Shows both the mean difference and the fold-level variance - critical with only 4 folds. If BSTS is better on average but worse on one specific fold, you want that visible, not averaged away.
   - Presented as part of **Figure 4**.
@@ -117,16 +93,27 @@ Both are computable, per model per fold.
 ---
 # 4. Customer Base: Survival Analysis (Retention).
 
-## Programmatic Metrics (Out-of-Sample)
+## Programmatic Metrics (Out-of-Sample).
+- **Retention Curve Divergence (Overestimation Zone)**.
+  - **What it measures**: cohort retention rate dynamics, focusing on percentage deviation metrics (MPE) between actual retention and expected curves over a continuous observation window.
+  - **How it compares**: X-axis = rebill period $t$, Y-axis = fractional retention rate bounded at 1.0. The baseline exponential curve systematically diverges upward at the long tail, creating a visually shaded overestimation zone and accumulating massive theoretical user survivorship. The probabilistic BdW model tightly tracks the empirical decay path. Subplots render multiple dynamic cohorts (e.g., specific `SUB_MONTHLY` geometries) isolated by cultural and structural variances.
+  - **Visual Proof**: **Figure 7.1**.
+
+- **Survival Decay Curve Divergence (Overestimation Zone)**.
+  - **What it measures**: cohort survival fractional rate $S(t)$ dynamics, focusing on percentage deviation metrics (MPE) between actual survival and expected curves over a continuous observation window.
+  - **How it compares**: X-axis = rebill period $t$, Y-axis = number of active users at $t$. The baseline exponential curve systematically diverges upward at the long tail, creating a visually shaded overestimation zone and accumulating massive theoretical user survivorship. The probabilistic BdW model tightly tracks the empirical decay path. Subplots render multiple dynamic cohorts (e.g., specific `SUB_MONTHLY` geometries) isolated by cultural and structural variances.
+  - **Visual Proof**: **Figure 7.2**.
+
 - **Holdout RMSE by Horizon Age (early vs late)**.
   - **What it measures**: Prediction error trajectory.
   - **How it compares**: X-axis = cohort age (months since acquisition), y-axis = RMSE. Two lines. They'll cross - exponential fits early periods comparably, then diverges at longer horizons as the survivor-pool heterogeneity accumulates. That crossing point is your thesis in one plot.
+  - **Visual Proof**: **Figure 8**.
 
 ## Business KPIs (Out-of-Sample).
 - **LTV Extrapolation Bias (D90 & D180)**.
   - **What it measures**: error in cohort cumulative revenue over 3-6 months.
   - **How it compares**: exponential curve systematically overestimates late-stage retention, directly inflating the predicted LTV.
-  - **Visual Proof**: **Figure 7** (Empirical vs. Exponential vs. BdW) showing divergence at the long tail.
+  - **Visual Proof**: **Figure 9** (Empirical vs. Exponential vs. BdW) showing divergence at the long tail.
 
 ---
 # A few things worth flagging explicitly about this set:

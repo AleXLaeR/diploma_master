@@ -71,8 +71,8 @@ Schema:
 - model_name.
 - fold_id: ROCV fold.
 - segment: a fold-unique ID that maps to the `eval_mmm.segment`.
-- incr_gads_search, incr_gads_youtube, incr_gads_discover, incr_metads_inst, incr_metads_fb, incr_tiktok (Float): actual revenue weights per paid channel, normalized to 1.0.
-- actual_contrib_gads_search, actual_contrib_gads_youtube, actual_contrib_gads_discover, actual_contrib_metads_inst, actual_contrib_metads_fb, actual_contrib_tiktok (Float): actual revenue contributions per paid channel.
+- incr_gads_search, incr_gads_youtube, incr_gads_discover, incr_metads_inst, incr_metads_fb, incr_tiktok (Float): forecasted revenue weights per paid channel, normalized to 1.0.
+- actual_contrib_gads_search, actual_contrib_gads_youtube, actual_contrib_gads_discover, actual_contrib_metads_inst, actual_contrib_metads_fb, actual_contrib_tiktok (Float): actual revenue contributions per paid channel (from holdout set).
 
 Data Preview:
 model_name | fold_id | segment | incr_gads_search | incr_gads_youtube | incr_gads_discover | incr_metads_inst | incr_metads_fb | incr_tiktok
