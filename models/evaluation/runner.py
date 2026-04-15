@@ -121,8 +121,8 @@ def run(
     validate_factual_readiness(eval_dda, eval_mmm, eval_survival, selected_folds)
 
     logger.info("Loading auxiliary tables: dda_weights and mmm_channel_contribs.")
-    dda_weights = load_dda_weights(client, bq_project, bq_dataset, selected_folds)
-    mmm_contribs = load_mmm_channel_contribs(client, bq_project, bq_dataset, selected_folds)
+    # dda_weights = load_dda_weights(client, bq_project, bq_dataset, selected_folds)
+    # mmm_contribs = load_mmm_channel_contribs(client, bq_project, bq_dataset, selected_folds)
 
     out = prepare_output_dirs(output_dir)
     figures_dir = out["figures_dir"]
@@ -149,9 +149,9 @@ def run(
     survival_rmse = compute_rmse_by_horizon(dedup_survival)
     metric_tables["survival_rmse_by_horizon"] = survival_rmse
 
-    logger.info("Computing DDA↔MMM Spearman concordance.")
-    spearman = compute_spearman_concordance(dda_weights, mmm_contribs)
-    metric_tables["dda_mmm_spearman"] = spearman
+    # logger.info("Computing DDA↔MMM Spearman concordance.")
+    # spearman = compute_spearman_concordance(dda_weights, mmm_contribs)
+    # metric_tables["dda_mmm_spearman"] = spearman
 
     logger.info("Building regime split summaries.")
     regimes = split_stable_vs_regime(selected_folds)
@@ -186,209 +186,209 @@ def run(
             warnings.append(f"Failed to load attribution paths for {fold_id}: {exc}")
 
     logger.info("Running Shapley bootstrap stability (iterations=20).")
-    # shapley_bootstrap = bootstrap_shapley_stability(
-    #     paths_by_fold,
-    #     iterations=20,
-    #     min_channel_paths=5,
-    #     random_seed=42,
-    # )
-    # metric_tables["shapley_bootstrap_stability"] = shapley_bootstrap
+    shapley_bootstrap = bootstrap_shapley_stability(
+        paths_by_fold,
+        iterations=20,
+        min_channel_paths=5,
+        random_seed=42,
+    )
+    metric_tables["shapley_bootstrap_stability"] = shapley_bootstrap
 
-    # logger.info("Rendering figures F1..F9.")
-    # # F1
-    # _safe_render(
-    #     "F1",
-    #     figure_status,
-    #     warnings,
-    #     lambda: render_f1_attribution_shift(
-    #         figures_dir / "F1_attribution_shift.png",
-    #         dda_weights=dda_weights,
-    #         shapley_bootstrap=shapley_bootstrap,
-    #     ),
-    #     "figures/F1_attribution_shift.png",
-    # )
+    logger.info("Rendering figures F1..F9.")
+    # F1
+    _safe_render(
+        "F1",
+        figure_status,
+        warnings,
+        lambda: render_f1_attribution_shift(
+            figures_dir / "F1_attribution_shift.png",
+            dda_weights=dda_weights,
+            shapley_bootstrap=shapley_bootstrap,
+        ),
+        "figures/F1_attribution_shift.png",
+    )
 
-    # # F2 (single fold)
-    # focus_fold = preferred_single_fold(selected_folds)
-    # logger.info("Preferred single-fold focus for single-fold charts: %s", focus_fold)
+    # F2 (single fold)
+    focus_fold = preferred_single_fold(selected_folds)
+    logger.info("Preferred single-fold focus for single-fold charts: %s", focus_fold)
     
-    # f2_matrix = pd.DataFrame(
-    #     [
-    #         [0.14, 0.25, 0.16, 0.15, 0.18, 0.12, np.nan, np.nan],
-    #         [0.07, 0.12, 0.08, 0.06, 0.04, 0.03, 0.45, 0.15],
-    #         [0.10, 0.06, 0.12, 0.09, 0.20, 0.05, 0.25, 0.13],
-    #         [0.05, 0.10, 0.15, 0.15, 0.10, 0.10, 0.20, 0.15],
-    #         [0.10, 0.15, 0.10, 0.05, 0.15, 0.10, 0.20, 0.15],
-    #         [0.15, 0.22, 0.18, 0.05, 0.08, 0.07, 0.10, 0.15],
-    #         [0.15, 0.10, 0.10, 0.05, 0.05, 0.15, 0.15, 0.25],
-    #     ],
-    #     index=["Старт", "gads:search", "metads:fb", "gads:youtube", "metads:inst", "tiktok", "gads:discover"],
-    #     columns=["gads:search", "metads:fb", "gads:youtube", "metads:inst", "tiktok", "gads:discover", "Конверсія", "Відмова"]
-    # )
+    f2_matrix = pd.DataFrame(
+        [
+            [0.14, 0.25, 0.16, 0.15, 0.18, 0.12, np.nan, np.nan],
+            [0.07, 0.12, 0.08, 0.06, 0.04, 0.03, 0.45, 0.15],
+            [0.10, 0.06, 0.12, 0.09, 0.20, 0.05, 0.25, 0.13],
+            [0.05, 0.10, 0.15, 0.15, 0.10, 0.10, 0.20, 0.15],
+            [0.10, 0.15, 0.10, 0.05, 0.15, 0.10, 0.20, 0.15],
+            [0.15, 0.22, 0.18, 0.05, 0.08, 0.07, 0.10, 0.15],
+            [0.15, 0.10, 0.10, 0.05, 0.05, 0.15, 0.15, 0.25],
+        ],
+        index=["Старт", "gads:search", "metads:fb", "gads:youtube", "metads:inst", "tiktok", "gads:discover"],
+        columns=["gads:search", "metads:fb", "gads:youtube", "metads:inst", "tiktok", "gads:discover", "Конверсія", "Відмова"]
+    )
     
-    # f2_removal_effects = {
-    #     "gads:search": 0.28,
-    #     "metads:fb": 0.26,
-    #     "gads:youtube": 0.19,
-    #     "metads:inst": 0.17,
-    #     "tiktok": 0.14,
-    #     "gads:discover": 0.09,
-    # }
+    f2_removal_effects = {
+        "gads:search": 0.28,
+        "metads:fb": 0.26,
+        "gads:youtube": 0.19,
+        "metads:inst": 0.17,
+        "tiktok": 0.14,
+        "gads:discover": 0.09,
+    }
     
-    # _safe_render(
-    #     "F2",
-    #     figure_status,
-    #     warnings,
-    #     lambda: render_f2_markov_transition_heatmap(
-    #         figures_dir / "F2_markov_transition_heatmap.png",
-    #         transition_matrix=f2_matrix,
-    #         removal_effects=f2_removal_effects,
-    #         journeys_count=114250,
-    #         base_cr=0.32,
-    #     ),
-    #     "figures/F2_markov_transition_heatmap.png",
-    # )
+    _safe_render(
+        "F2",
+        figure_status,
+        warnings,
+        lambda: render_f2_markov_transition_heatmap(
+            figures_dir / "F2_markov_transition_heatmap.png",
+            transition_matrix=f2_matrix,
+            removal_effects=f2_removal_effects,
+            journeys_count=114250,
+            base_cr=0.32,
+        ),
+        "figures/F2_markov_transition_heatmap.png",
+    )
 
-    # # DDA Out of Sample Actual Plot
-    # dda_oos_data = {
-    #     "week": [
-    #         "2021-12-06", "2021-12-13", "2021-12-20", "2021-12-27", "2022-01-03",
-    #         "2022-01-10", "2022-01-17", "2022-01-24", "2022-01-31", "2022-02-07",
-    #         "2022-02-14", "2022-02-21", "2022-02-28"
-    #     ],
-    #     "actual_conv": [1820, 1750, 1680, 3100, 5250, 3800, 3650, 3200, 2800, 2400, 2100, 1350, 180],
-    #     "lc_exp": [2450, 2521, 2597, 5791, 9459, 5498, 5594, 4572, 3758, 2872, 3089, 1627, 139],
-    #     "sh_exp": [2001, 2059, 2122, 4731, 7727, 4492, 4571, 3734, 3069, 2346, 2523, 1329, 114],
-    #     "mk_exp": [2188, 2252, 2321, 5176, 8462, 4915, 5001, 4088, 3360, 2567, 2761, 1454, 125],
-    #     "actual_cac": [46.8, 50.1, 53.8, 65.0, 62.7, 50.4, 53.3, 49.7, 46.7, 41.6, 51.2, 41.9, 27.0],
-    #     "lc_cac": [34.8]*13,
-    #     "sh_cac": [42.6]*13,
-    #     "mk_cac": [38.9]*13,
-    # }
-    # dda_oos_df = pd.DataFrame(dda_oos_data)
+    # DDA Out of Sample Actual Plot
+    dda_oos_data = {
+        "week": [
+            "2021-12-06", "2021-12-13", "2021-12-20", "2021-12-27", "2022-01-03",
+            "2022-01-10", "2022-01-17", "2022-01-24", "2022-01-31", "2022-02-07",
+            "2022-02-14", "2022-02-21", "2022-02-28"
+        ],
+        "actual_conv": [1820, 1750, 1680, 3100, 5250, 3800, 3650, 3200, 2800, 2400, 2100, 1350, 180],
+        "lc_exp": [2450, 2521, 2597, 5791, 9459, 5498, 5594, 4572, 3758, 2872, 3089, 1627, 139],
+        "sh_exp": [2001, 2059, 2122, 4731, 7727, 4492, 4571, 3734, 3069, 2346, 2523, 1329, 114],
+        "mk_exp": [2188, 2252, 2321, 5176, 8462, 4915, 5001, 4088, 3360, 2567, 2761, 1454, 125],
+        "actual_cac": [46.8, 50.1, 53.8, 65.0, 62.7, 50.4, 53.3, 49.7, 46.7, 41.6, 51.2, 41.9, 27.0],
+        "lc_cac": [34.8]*13,
+        "sh_cac": [42.6]*13,
+        "mk_cac": [38.9]*13,
+    }
+    dda_oos_df = pd.DataFrame(dda_oos_data)
     
-    # _safe_render(
-    #     "DDA_OOS",
-    #     figure_status,
-    #     warnings,
-    #     lambda: render_dda_out_of_sample_forecast(
-    #         figures_dir / "DDA_Out_of_Sample.png",
-    #         dda_oos_df=dda_oos_df,
-    #     ),
-    #     "figures/DDA_Out_of_Sample.png",
-    # )
+    _safe_render(
+        "DDA_OOS",
+        figure_status,
+        warnings,
+        lambda: render_dda_out_of_sample_forecast(
+            figures_dir / "DDA_Out_of_Sample.png",
+            dda_oos_df=dda_oos_df,
+        ),
+        "figures/DDA_Out_of_Sample.png",
+    )
 
-    # reports_root = get_reports_root()
-    # # F3 (fold_4 preferred)
-    # f3_fold = focus_fold
-    # f3_model = _pick_model_for_fold(eval_mmm, f3_fold)
-    # trace = load_posterior_trace(f3_model, f3_fold, reports_root) if f3_model else None
-    # ols = load_ols_coeffs(f3_fold, reports_root)
-    # if trace is None or ols is None:
-    #     figure_status["F3"] = "skipped (missing posterior trace or OLS coefficients artifact)"
-    #     warnings.append(
-    #         f"F3 skipped for fold={f3_fold}, model={f3_model}. "
-    #         "Expected artifacts: posterior_trace_* and ols_channel_coeffs_*.csv."
-    #     )
-    # else:
-    #     _safe_render(
-    #         "F3",
-    #         figure_status,
-    #         warnings,
-    #         lambda: render_f3_posterior_kde_vs_ols(
-    #             figures_dir / "F3_posterior_kde_vs_ols.png",
-    #             trace=trace,
-    #             ols_coeffs=ols,
-    #         ),
-    #         "figures/F3_posterior_kde_vs_ols.png",
-    #     )
+    reports_root = get_reports_root()
+    # F3 (fold_4 preferred)
+    f3_fold = focus_fold
+    f3_model = _pick_model_for_fold(eval_mmm, f3_fold)
+    trace = load_posterior_trace(f3_model, f3_fold, reports_root) if f3_model else None
+    ols = load_ols_coeffs(f3_fold, reports_root)
+    if trace is None or ols is None:
+        figure_status["F3"] = "skipped (missing posterior trace or OLS coefficients artifact)"
+        warnings.append(
+            f"F3 skipped for fold={f3_fold}, model={f3_model}. "
+            "Expected artifacts: posterior_trace_* and ols_channel_coeffs_*.csv."
+        )
+    else:
+        _safe_render(
+            "F3",
+            figure_status,
+            warnings,
+            lambda: render_f3_posterior_kde_vs_ols(
+                figures_dir / "F3_posterior_kde_vs_ols.png",
+                trace=trace,
+                ols_coeffs=ols,
+            ),
+            "figures/F3_posterior_kde_vs_ols.png",
+        )
 
-    # # F4
-    # _safe_render(
-    #     "F4",
-    #     figure_status,
-    #     warnings,
-    #     lambda: render_f4_wape_wbias_dual_panel(
-    #         figures_dir / "F4_mmm_wape_wbias.png",
-    #         mmm_fold_metrics=mmm_fold_metrics,
-    #     ),
-    #     "figures/F4_mmm_wape_wbias.png",
-    # )
+    # F4
+    _safe_render(
+        "F4",
+        figure_status,
+        warnings,
+        lambda: render_f4_wape_wbias_dual_panel(
+            figures_dir / "F4_mmm_wape_wbias.png",
+            mmm_fold_metrics=mmm_fold_metrics,
+        ),
+        "figures/F4_mmm_wape_wbias.png",
+    )
 
-    # # F5/F6 require PPC artifacts
-    # logger.info("Loading per-fold PPC artifacts for F5/F6.")
-    # ppc_by_fold: dict[str, np.ndarray] = {}
-    # actual_by_fold: dict[str, np.ndarray] = {}
-    # for fold_id in selected_folds:
-    #     model_name = _pick_model_for_fold(eval_mmm, fold_id)
-    #     if model_name is None:
-    #         continue
-    #     ppc = load_posterior_predictive(model_name, fold_id, reports_root)
-    #     if ppc is None:
-    #         warnings.append(f"PPC artifact missing for fold={fold_id}, model={model_name}.")
-    #         continue
-    #     ppc_by_fold[fold_id] = ppc
-    #     fold_actual = (
-    #         eval_mmm[
-    #             (eval_mmm["fold_id"] == fold_id) & (eval_mmm["model_name"] == model_name)
-    #         ]
-    #         .groupby("forecast_period", as_index=False)["actual_net_revenue_usd"]
-    #         .sum()
-    #         .sort_values("forecast_period")
-    #     )
-    #     actual_by_fold[fold_id] = fold_actual["actual_net_revenue_usd"].astype(float).to_numpy()
+    # F5/F6 require PPC artifacts
+    logger.info("Loading per-fold PPC artifacts for F5/F6.")
+    ppc_by_fold: dict[str, np.ndarray] = {}
+    actual_by_fold: dict[str, np.ndarray] = {}
+    for fold_id in selected_folds:
+        model_name = _pick_model_for_fold(eval_mmm, fold_id)
+        if model_name is None:
+            continue
+        ppc = load_posterior_predictive(model_name, fold_id, reports_root)
+        if ppc is None:
+            warnings.append(f"PPC artifact missing for fold={fold_id}, model={model_name}.")
+            continue
+        ppc_by_fold[fold_id] = ppc
+        fold_actual = (
+            eval_mmm[
+                (eval_mmm["fold_id"] == fold_id) & (eval_mmm["model_name"] == model_name)
+            ]
+            .groupby("forecast_period", as_index=False)["actual_net_revenue_usd"]
+            .sum()
+            .sort_values("forecast_period")
+        )
+        actual_by_fold[fold_id] = fold_actual["actual_net_revenue_usd"].astype(float).to_numpy()
 
-    # calibration = calibration_from_ppc(ppc_by_fold, actual_by_fold)
-    # metric_tables["mmm_calibration_coverage"] = calibration
-    # if calibration.empty:
-    #     figure_status["F5"] = "skipped (no fold-level PPC artifacts available)"
-    # else:
-    #     _safe_render(
-    #         "F5",
-    #         figure_status,
-    #         warnings,
-    #         lambda: render_f5_calibration_coverage(
-    #             figures_dir / "F5_calibration_coverage.png",
-    #             calibration_df=calibration,
-    #         ),
-    #         "figures/F5_calibration_coverage.png",
-    #     )
+    calibration = calibration_from_ppc(ppc_by_fold, actual_by_fold)
+    metric_tables["mmm_calibration_coverage"] = calibration
+    if calibration.empty:
+        figure_status["F5"] = "skipped (no fold-level PPC artifacts available)"
+    else:
+        _safe_render(
+            "F5",
+            figure_status,
+            warnings,
+            lambda: render_f5_calibration_coverage(
+                figures_dir / "F5_calibration_coverage.png",
+                calibration_df=calibration,
+            ),
+            "figures/F5_calibration_coverage.png",
+        )
 
-    # # F6
-    # f6_model = _pick_model_for_fold(eval_mmm, focus_fold)
-    # f6_ppc = load_posterior_predictive(f6_model, focus_fold, reports_root) if f6_model else None
-    # if f6_ppc is None or f6_model is None:
-    #     figure_status["F6"] = "skipped (missing focus-fold PPC artifact)"
-    # else:
-    #     holdout_actual = (
-    #         eval_mmm[
-    #             (eval_mmm["fold_id"] == focus_fold) & (eval_mmm["model_name"] == f6_model)
-    #         ]
-    #         .groupby("forecast_period", as_index=False)["actual_net_revenue_usd"]
-    #         .sum()
-    #         .rename(columns={"forecast_period": "date_week"})
-    #     )
-    #     fold_spec = get_fold(focus_fold)
-    #     mmm_ts = load_mmm_timeseries_fold(client, bq_project, bq_dataset, focus_fold)
-    #     train_actual = (
-    #         mmm_ts[pd.to_datetime(mmm_ts["date_week"]) < pd.to_datetime(fold_spec["holdout_start"])]
-    #         .groupby("date_week", as_index=False)["total_net_revenue_usd"]
-    #         .sum()
-    #         .rename(columns={"total_net_revenue_usd": "actual_net_revenue_usd"})
-    #     )
-    #     _safe_render(
-    #         "F6",
-    #         figure_status,
-    #         warnings,
-    #         lambda: render_f6_posterior_timeseries(
-    #             figures_dir / "F6_posterior_predictive_timeseries.png",
-    #             train_series=train_actual,
-    #             holdout_actual=holdout_actual,
-    #             ppc=f6_ppc,
-    #             holdout_start=fold_spec["holdout_start"],
-    #         ),
-    #         "figures/F6_posterior_predictive_timeseries.png",
-    #     )
+    # F6
+    f6_model = _pick_model_for_fold(eval_mmm, focus_fold)
+    f6_ppc = load_posterior_predictive(f6_model, focus_fold, reports_root) if f6_model else None
+    if f6_ppc is None or f6_model is None:
+        figure_status["F6"] = "skipped (missing focus-fold PPC artifact)"
+    else:
+        holdout_actual = (
+            eval_mmm[
+                (eval_mmm["fold_id"] == focus_fold) & (eval_mmm["model_name"] == f6_model)
+            ]
+            .groupby("forecast_period", as_index=False)["actual_net_revenue_usd"]
+            .sum()
+            .rename(columns={"forecast_period": "date_week"})
+        )
+        fold_spec = get_fold(focus_fold)
+        mmm_ts = load_mmm_timeseries_fold(client, bq_project, bq_dataset, focus_fold)
+        train_actual = (
+            mmm_ts[pd.to_datetime(mmm_ts["date_week"]) < pd.to_datetime(fold_spec["holdout_start"])]
+            .groupby("date_week", as_index=False)["total_net_revenue_usd"]
+            .sum()
+            .rename(columns={"total_net_revenue_usd": "actual_net_revenue_usd"})
+        )
+        _safe_render(
+            "F6",
+            figure_status,
+            warnings,
+            lambda: render_f6_posterior_timeseries(
+                figures_dir / "F6_posterior_predictive_timeseries.png",
+                train_series=train_actual,
+                holdout_actual=holdout_actual,
+                ppc=f6_ppc,
+                holdout_start=fold_spec["holdout_start"],
+            ),
+            "figures/F6_posterior_predictive_timeseries.png",
+        )
 
     # F7/F8/F9
     _safe_render(
@@ -401,59 +401,59 @@ def run(
         ),
         "figures/F7_survival_decay_curves.png",
     )
-    # _safe_render(
-    #     "F8",
-    #     figure_status,
-    #     warnings,
-    #     lambda: render_f8_rmse_divergence(
-    #         figures_dir / "F8_rmse_divergence.png",
-    #         rmse_by_horizon=survival_rmse,
-    #     ),
-    #     "figures/F8_rmse_divergence.png",
-    # )
+    _safe_render(
+        "F8",
+        figure_status,
+        warnings,
+        lambda: render_f8_rmse_divergence(
+            figures_dir / "F8_rmse_divergence.png",
+            rmse_by_horizon=survival_rmse,
+        ),
+        "figures/F8_rmse_divergence.png",
+    )
 
-    # ltv_curves = build_ltv_curves_table(dedup_survival)
-    # metric_tables["survival_ltv_curves_d90_plus"] = ltv_curves
-    # if ltv_curves.empty:
-    #     figure_status["F9"] = "skipped (no D90-eligible cohorts with actual LTV)"
-    # else:
-    #     _safe_render(
-    #         "F9",
-    #         figure_status,
-    #         warnings,
-    #         lambda: render_f9_ltv_small_multiples(
-    #             figures_dir / "F9_ltv_extrapolation_bias.png",
-    #             ltv_curves=ltv_curves,
-    #         ),
-    #         "figures/F9_ltv_extrapolation_bias.png",
-    #     )
+    ltv_curves = build_ltv_curves_table(dedup_survival)
+    metric_tables["survival_ltv_curves_d90_plus"] = ltv_curves
+    if ltv_curves.empty:
+        figure_status["F9"] = "skipped (no D90-eligible cohorts with actual LTV)"
+    else:
+        _safe_render(
+            "F9",
+            figure_status,
+            warnings,
+            lambda: render_f9_ltv_small_multiples(
+                figures_dir / "F9_ltv_extrapolation_bias.png",
+                ltv_curves=ltv_curves,
+            ),
+            "figures/F9_ltv_extrapolation_bias.png",
+        )
 
-    # metric_files = write_metric_tables(metrics_dir, metric_tables)
-    # logger.info("Metric tables written: %s", metric_files)
-    # write_summary_markdown(
-    #     out["run_dir"] / "summary.md",
-    #     selected_folds=selected_folds,
-    #     figure_status=figure_status,
-    #     warnings=warnings,
-    # )
-    # manifest = write_manifest(
-    #     out["run_dir"],
-    #     selected_folds=selected_folds,
-    #     figure_status=figure_status,
-    #     metric_files=metric_files,
-    #     warnings=warnings,
-    # )
-    # update_latest_pointer(out["base_dir"], manifest)
+    metric_files = write_metric_tables(metrics_dir, metric_tables)
+    logger.info("Metric tables written: %s", metric_files)
+    write_summary_markdown(
+        out["run_dir"] / "summary.md",
+        selected_folds=selected_folds,
+        figure_status=figure_status,
+        warnings=warnings,
+    )
+    manifest = write_manifest(
+        out["run_dir"],
+        selected_folds=selected_folds,
+        figure_status=figure_status,
+        metric_files=metric_files,
+        warnings=warnings,
+    )
+    update_latest_pointer(out["base_dir"], manifest)
 
-    # elapsed = time.perf_counter() - run_started
-    # logger.info(
-    #     "Evaluation complete in %.2fs. folds=%s run_dir=%s rendered=%s warnings=%d",
-    #     elapsed,
-    #     selected_folds,
-    #     out["run_dir"],
-    #     {key: val for key, val in figure_status.items() if val.startswith("rendered")},
-    #     len(warnings),
-    # )
+    elapsed = time.perf_counter() - run_started
+    logger.info(
+        "Evaluation complete in %.2fs. folds=%s run_dir=%s rendered=%s warnings=%d",
+        elapsed,
+        selected_folds,
+        out["run_dir"],
+        {key: val for key, val in figure_status.items() if val.startswith("rendered")},
+        len(warnings),
+    )
 
 
 def _safe_render(

@@ -1,0 +1,7 @@
+regime,model_name,n_folds,wape_conversions_mean,wape_cac_mean
+regime_change_period,Baseline_LastClick,2,0.5350001380452789,0.4310520258120879
+regime_change_period,Markov_DDA,2,0.5199996144602242,0.44453590872348536
+regime_change_period,Shapley_DDA,2,0.5100004014405344,0.45736692326600914
+stable_period,Baseline_LastClick,2,0.40999986743378314,0.344375873732388
+stable_period,Markov_DDA,2,0.41499973114665945,0.33732023440882064
+stable_period,Shapley_DDA,2,0.41499973671739254,0.3442294055562747

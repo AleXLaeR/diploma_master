@@ -16,6 +16,6 @@ __pycache__/
 *.nc
 
 *.log
-reports/
+# reports/
 
 sa*.json
